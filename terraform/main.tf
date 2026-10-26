@@ -157,32 +157,34 @@ resource "aws_route_table_association" "database" {
 }
 
 # Security groups
+# Keep rules in separate resources to avoid a dependency cycle between the
+# ALB egress rule and the application ingress rule.
 resource "aws_security_group" "alb" {
   name        = "${local.name}-alb-sg"
   description = "Allow HTTP from the internet to the ALB"
   vpc_id      = aws_vpc.main.id
 
-  ingress {
-    description = "HTTP from internet for demonstration"
-    from_port   = 80
-    to_port     = 80
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  # Broad outbound rule avoids circular dependency.
-  # App ingress remains restricted to the ALB security group.
-  egress {
-    description = "Outbound traffic from ALB"
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
   tags = merge(local.common_tags, {
     Name = "${local.name}-alb-sg"
   })
+}
+
+resource "aws_vpc_security_group_ingress_rule" "alb_http" {
+  security_group_id = aws_security_group.alb.id
+  description       = "HTTP from internet for demonstration"
+  ip_protocol       = "tcp"
+  from_port         = 80
+  to_port           = 80
+  cidr_ipv4         = "0.0.0.0/0"
+}
+
+resource "aws_vpc_security_group_egress_rule" "alb_to_app_http" {
+  security_group_id            = aws_security_group.alb.id
+  description                  = "HTTP from ALB to application tier"
+  ip_protocol                  = "tcp"
+  from_port                    = 80
+  to_port                      = 80
+  referenced_security_group_id = aws_security_group.app.id
 }
 
 resource "aws_security_group" "app" {
@@ -190,33 +192,36 @@ resource "aws_security_group" "app" {
   description = "Allow HTTP only from ALB"
   vpc_id      = aws_vpc.main.id
 
-  ingress {
-    description     = "HTTP from ALB only"
-    from_port       = 80
-    to_port         = 80
-    protocol        = "tcp"
-    security_groups = [aws_security_group.alb.id]
-  }
-
-  egress {
-    description = "HTTPS outbound through NAT"
-    from_port   = 443
-    to_port     = 443
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  egress {
-    description = "HTTP outbound through NAT"
-    from_port   = 80
-    to_port     = 80
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
   tags = merge(local.common_tags, {
     Name = "${local.name}-app-sg"
   })
+}
+
+resource "aws_vpc_security_group_ingress_rule" "app_from_alb_http" {
+  security_group_id            = aws_security_group.app.id
+  description                  = "HTTP from ALB only"
+  ip_protocol                  = "tcp"
+  from_port                    = 80
+  to_port                      = 80
+  referenced_security_group_id = aws_security_group.alb.id
+}
+
+resource "aws_vpc_security_group_egress_rule" "app_https_outbound" {
+  security_group_id = aws_security_group.app.id
+  description       = "HTTPS outbound through NAT"
+  ip_protocol       = "tcp"
+  from_port         = 443
+  to_port           = 443
+  cidr_ipv4         = "0.0.0.0/0"
+}
+
+resource "aws_vpc_security_group_egress_rule" "app_http_outbound" {
+  security_group_id = aws_security_group.app.id
+  description       = "HTTP outbound through NAT"
+  ip_protocol       = "tcp"
+  from_port         = 80
+  to_port           = 80
+  cidr_ipv4         = "0.0.0.0/0"
 }
 
 resource "aws_security_group" "database" {
@@ -224,17 +229,18 @@ resource "aws_security_group" "database" {
   description = "Allow MySQL only from application tier"
   vpc_id      = aws_vpc.main.id
 
-  ingress {
-    description     = "MySQL from app security group only"
-    from_port       = 3306
-    to_port         = 3306
-    protocol        = "tcp"
-    security_groups = [aws_security_group.app.id]
-  }
-
   tags = merge(local.common_tags, {
     Name = "${local.name}-db-sg"
   })
+}
+
+resource "aws_vpc_security_group_ingress_rule" "database_from_app_mysql" {
+  security_group_id            = aws_security_group.database.id
+  description                  = "MySQL from app security group only"
+  ip_protocol                  = "tcp"
+  from_port                    = 3306
+  to_port                      = 3306
+  referenced_security_group_id = aws_security_group.app.id
 }
 
 # Application Load Balancer
