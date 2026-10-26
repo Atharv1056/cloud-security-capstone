@@ -1,0 +1,16 @@
+.gitignore
+README.md
+diagrams/architecture.mmd
+diagrams/architecture.png
+evidence/REAL_EVIDENCE_CHECKLIST.md
+evidence/simulated/SIMULATION_NOTICE.txt
+evidence/simulated/sample_security_checks.png
+evidence/simulated/sample_security_review.txt
+evidence/simulated/sample_terraform_validation.png
+terraform/.gitignore
+terraform/.terraform.lock.hcl
+terraform/main.tf
+terraform/outputs.tf
+terraform/terraform.tfvars.example
+terraform/variables.tf
+terraform/versions.tf
