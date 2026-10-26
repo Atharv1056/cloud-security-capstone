@@ -1,0 +1,14 @@
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfplan
+crash.log
+terraform.tfvars
+*.pem
+.env
+.env.*
+!.env.example
+override.tf
+override.tf.json
+__pycache__/
+.vscode/

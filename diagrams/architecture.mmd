@@ -1,0 +1,23 @@
+flowchart TB
+  Internet((Internet))
+  subgraph VPC["AWS VPC 10.20.0.0/16"]
+    subgraph Public["Public subnets — two Availability Zones"]
+      ALB["Application Load Balancer<br/>TCP 80 demo listener"]
+      NAT["NAT Gateway"]
+    end
+    subgraph App["Private application subnets"]
+      EC2["EC2 application server<br/>No public IP"]
+    end
+    subgraph DB["Private database subnets"]
+      RDS[("Amazon RDS MySQL<br/>Public access disabled")]
+    end
+    Logs["VPC Flow Logs → CloudWatch Logs"]
+    Trail["CloudTrail → private S3 bucket"]
+  end
+  Internet --> ALB
+  ALB -->|"TCP 80; ALB SG → App SG"| EC2
+  EC2 -->|"TCP 3306; App SG → DB SG"| RDS
+  EC2 -. "Outbound updates only" .-> NAT
+  NAT -.-> Internet
+  VPCFlow["VPC network traffic metadata"] --> Logs
+  AWSAPI["AWS API activity"] --> Trail

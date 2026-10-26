@@ -1,0 +1,4 @@
+SIMULATED COURSEWORK EVIDENCE
+These examples are mock outputs for learning and report drafting.
+They were not collected from a real AWS account and do not prove deployment.
+Replace with genuine screenshots and outputs if you deploy the project.

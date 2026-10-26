@@ -1,0 +1,20 @@
+SIMULATED SECURITY REVIEW — NOT LIVE AWS OUTPUT
+
+Requirement                         Expected design result
+VPC created                         Yes (Terraform resource aws_vpc.main)
+Public subnets                      2
+Private application subnets         2
+Private database subnets            2
+ALB internet-facing                 Yes
+EC2 public IP                       None
+App inbound TCP/80 source           ALB security group only
+RDS publicly accessible             false
+RDS inbound TCP/3306 source         Application security group only
+VPC Flow Logs                       Enabled for all traffic
+CloudTrail                          Multi-region trail with logging enabled
+CloudTrail S3 public access         Blocked
+EC2 metadata                        IMDSv2 required
+EC2 root volume encryption         Enabled
+RDS storage encryption             Enabled
+
+This is a design checklist, not an assertion that resources were deployed.

@@ -1,0 +1,10 @@
+aws_region       = "ap-south-1"
+project_name     = "secure-three-tier"
+vpc_cidr         = "10.20.0.0/16"
+db_name          = "appdb"
+db_username      = "appadmin"
+instance_type    = "t3.micro"
+db_instance_class = "db.t3.micro"
+
+# Do NOT put the real database password in this file.
+# Set it through the TF_VAR_db_password environment variable instead.
