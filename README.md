@@ -1,100 +1,133 @@
 # Cloud Security Capstone: Secure Three-Tier AWS Application
 
-## Assignment alignment
-This project addresses the uploaded assignment requirements:
+## 1. Project Overview
+
+This project demonstrates the design of a secure three-tier application on AWS using Terraform (Infrastructure as Code).
+
+The architecture separates public access, application processing, and database storage into different network tiers. Security groups, encryption, and logging services are included to demonstrate cloud security best practices.
+
+**Project status:** Terraform configuration validated locally. No AWS infrastructure has been deployed.
+
+## 2. Assignment Alignment
+
+This project addresses the following requirements:
+
 - VPC with public and private subnets
-- Application Load Balancer in public subnets
+- Application Load Balancer (ALB) in public subnets
 - EC2 application server in a private application subnet
-- RDS in private database subnets, not publicly accessible
+- RDS database in private database subnets
 - Internet Gateway, NAT Gateway, route tables, and security groups
-- VPC Flow Logs and CloudTrail
-- Terraform code, architecture diagram, and evidence checklist
+- VPC Flow Logs and AWS CloudTrail
+- Terraform configuration, architecture diagram, and evidence checklist
 
-## Beginner explanation
-1. **VPC**: an isolated network in AWS.
-2. **Public subnet**: has a route to the Internet Gateway. The ALB is placed here.
-3. **Private application subnet**: EC2 has no public IP. The ALB security group is the only source allowed to connect to EC2 on HTTP port 80.
-4. **Private database subnet**: RDS has `publicly_accessible = false`. Its security group allows MySQL port 3306 only from the application security group.
-5. **Internet Gateway (IGW)**: gives public subnets an internet route.
-6. **NAT Gateway**: lets private application instances make outbound connections without accepting unsolicited inbound connections. A NAT Gateway has hourly and data-processing charges.
-7. **VPC Flow Logs**: records IP traffic metadata for troubleshooting/security analysis.
-8. **CloudTrail**: records AWS API activity in an S3 bucket.
-9. **Terraform**: Infrastructure as Code (IaC)—resources are described in configuration files rather than created manually.
+## 3. Three-Tier Architecture
 
-## Important evidence note
-Files under `evidence/simulated/` are **illustrative sample evidence created for this coursework**. They are not screenshots from a real AWS account and do not prove that deployment occurred. For a real deployment, replace them with screenshots from your own AWS console and command outputs.
+### Tier 1: Public Access
+The public tier contains the Application Load Balancer, which receives HTTP traffic and forwards requests to the application tier.
 
-## Architecture
-See `diagrams/architecture.png` and `diagrams/architecture.mmd`.
+### Tier 2: Application
+The application tier contains an EC2 instance in a private subnet. It has no public IP address and accepts HTTP traffic only from the ALB security group.
 
-## Files
-- `terraform/versions.tf`: Terraform and AWS provider requirements
-- `terraform/variables.tf`: configurable inputs
-- `terraform/main.tf`: network, ALB, EC2, RDS, and monitoring resources
-- `terraform/outputs.tf`: values printed after deployment
-- `terraform/terraform.tfvars.example`: safe example configuration
-- `evidence/`: sample evidence and real-evidence checklist
+### Tier 3: Database
+The database tier contains an Amazon RDS MySQL database in private database subnets. Public accessibility is disabled, and the database security group allows MySQL traffic on TCP port 3306 only from the application security group.
 
-## Prerequisites for real deployment
-- An AWS account with permissions to create VPC, EC2, ELB, RDS, IAM, CloudWatch Logs, CloudTrail, and S3 resources.
-- Terraform 1.5 or newer.
-- AWS CLI configured with credentials (`aws configure`) or another approved credential method.
-- An AWS region with at least two available Availability Zones.
+## 4. Security Controls
 
-## Cost warning
-A NAT Gateway, Application Load Balancer, RDS database, EC2 instance, CloudTrail storage, and CloudWatch Logs may incur charges. This is a simulated project by default. Do not run `terraform apply` unless you understand the cost and have permission to create resources.
+- **Network isolation:** Public, application, and database tiers use separate subnets.
+- **Security groups:** Traffic is restricted according to the intended communication between tiers.
+- **Private EC2:** The application instance has no public IP address.
+- **IMDSv2:** Required for EC2 instance metadata access.
+- **Encryption:** EC2 root storage and RDS storage are encrypted.
+- **Database protection:** RDS is configured as not publicly accessible.
+- **VPC Flow Logs:** Network traffic metadata is sent to CloudWatch Logs.
+- **CloudTrail:** AWS API activity is recorded in an S3 bucket with public access blocked, versioning, and server-side encryption.
+- **Secure configuration management:** The database password is supplied through a Terraform variable rather than hard-coded into the main configuration.
 
-## Validate the Terraform configuration
-Open a terminal in the `terraform` directory and run:
+## 5. Repository Structure
 
-```bash
+- `terraform/versions.tf` — Terraform and AWS provider requirements
+- `terraform/variables.tf` — configurable input variables
+- `terraform/main.tf` — network, ALB, EC2, RDS, and monitoring resources
+- `terraform/outputs.tf` — outputs intended to be displayed after deployment
+- `terraform/terraform.tfvars.example` — example configuration
+- `diagrams/architecture.png` — architecture diagram
+- `diagrams/architecture.mmd` — Mermaid architecture source
+- `evidence/` — evidence checklist and illustrative sample evidence
+
+## 6. Local Validation Results
+
+The following commands have been run locally:
+
+| Check | Result |
+|---|---|
+| `terraform fmt -check` | Passed |
+| `terraform validate` | Passed |
+| `terraform plan -refresh=false` | Not completed; AWS credentials were unavailable |
+| `terraform output` | No outputs available from the current state |
+
+Terraform validation checks the configuration's syntax and internal consistency. It does not prove that AWS resources can be created successfully.
+
+The plan command failed because Terraform could not find valid AWS credentials. No successful AWS deployment has been verified.
+
+## 7. Evidence Disclaimer
+
+Files under `evidence/simulated/` are illustrative sample evidence created for coursework. They are not screenshots from a real AWS account and must not be presented as proof of a completed deployment.
+
+For a real deployment, capture genuine AWS Console screenshots and relevant command outputs after obtaining the required account access and instructor approval.
+
+## 8. Prerequisites for Real Deployment
+
+- An AWS account with permission to create the required networking, compute, database, logging, IAM, and storage resources
+- Terraform 1.5 or newer
+- AWS CLI or another approved AWS credential method
+- An AWS region with at least two available Availability Zones
+- Instructor approval and a review of estimated costs
+
+## 9. Local Validation Instructions
+
+Run the following commands from the `terraform/` directory:
+
+```powershell
 terraform init
 terraform fmt -check
 terraform validate
-terraform plan
 ```
 
-`terraform plan` requires AWS credentials and access to query AWS data sources. It does not create resources.
+These commands initialize the provider, check formatting, and validate the configuration. They do not deploy infrastructure.
 
-## If deploying with instructor approval
-1. Copy `terraform.tfvars.example` to `terraform.tfvars`.
-2. Set the password through an environment variable rather than storing it in a file.
+A Terraform plan requires valid AWS credentials for this project because its configuration uses AWS provider functionality and AWS data sources.
 
-Windows PowerShell:
-```powershell
-$env:TF_VAR_db_password = "Use-A-Unique-Strong-Demo-Password!"
-```
+## 10. Cost and Deployment Warning
 
-macOS/Linux:
-```bash
-export TF_VAR_db_password='Use-A-Unique-Strong-Demo-Password!'
-```
+AWS resources such as NAT Gateways, Application Load Balancers, EC2 instances, RDS databases, CloudWatch Logs, and S3 storage may incur charges.
 
-3. Run `terraform init`, `terraform fmt`, `terraform validate`, and `terraform plan`.
-4. Review the plan and expected charges carefully.
-5. Only with approval, run `terraform apply`.
-6. Capture real console screenshots and test the ALB DNS output.
-7. When finished, run `terraform destroy` to remove resources. Check the AWS console afterward for anything left behind.
+This project has been maintained as a local coursework project. Do not run `terraform apply` unless you have AWS access, instructor approval, and have reviewed the expected costs.
 
-## Security design decisions
-- RDS is in isolated database subnets with no default internet route.
-- RDS public access is explicitly disabled.
-- The database security group accepts TCP 3306 only from the application security group.
-- The app security group accepts TCP 80 only from the ALB security group.
-- EC2 has no public IP and requires IMDSv2.
-- EC2 root storage and RDS storage are encrypted.
-- CloudTrail logs are stored in an S3 bucket with public access blocked, versioning, and server-side encryption.
-- The application listener uses HTTP for a simple coursework demonstration. For a production system, use HTTPS with an ACM certificate and a secure TLS policy.
-- The sample uses one NAT Gateway to reduce costs compared with one per Availability Zone; this creates a single-AZ egress dependency and is not the most resilient production design.
-- The app tier is a single EC2 instance, and RDS Multi-AZ is disabled to keep the demo smaller. Production systems should assess redundancy, backups, patching, secrets management, and high availability.
+If deployment is later approved, use a unique strong database password supplied securely through `TF_VAR_db_password`. Do not commit real credentials or secret values to GitHub.
 
-## Suggested viva answers
-**Why use three tiers?** To separate public entry, application processing, and data storage, reducing direct exposure and making security rules easier to enforce.
+## 11. Design Limitations and Future Improvements
 
-**Why is the database private?** It should not accept direct connections from the public internet. Only the application tier needs database access.
+- The ALB listener currently uses HTTP for demonstration. A production deployment should use HTTPS with an ACM certificate and an appropriate TLS policy.
+- One NAT Gateway is used to reduce demonstration costs, but it creates a single-AZ egress dependency.
+- The application tier uses a single EC2 instance, and RDS Multi-AZ is disabled in this demonstration.
+- Production deployment should assess high availability, patch management, secrets management, backup restoration, monitoring alerts, and least-privilege IAM policies.
 
-**What is the purpose of a security group?** It is a stateful virtual firewall controlling inbound and outbound traffic for associated resources.
+## 12. Suggested Viva Answers
 
-**Why Terraform?** It makes infrastructure repeatable, reviewable, version-controllable, and easier to rebuild.
+**Why use a three-tier architecture?**  
+It separates public access, application processing, and database storage, reducing direct exposure and simplifying security controls.
 
-**What do Flow Logs and CloudTrail record?** Flow Logs capture network traffic metadata; CloudTrail records AWS API and account activity. They provide different kinds of security visibility.
+**Why is the database private?**  
+The database should not accept direct connections from the public internet. Only the application tier needs database access.
+
+**What is a security group?**  
+A stateful virtual firewall that controls inbound and outbound traffic for associated AWS resources.
+
+**Why use Terraform?**  
+Terraform makes infrastructure repeatable, reviewable, and version-controllable through code.
+
+**What do VPC Flow Logs and CloudTrail record?**  
+VPC Flow Logs capture network traffic metadata, while CloudTrail records AWS API activity. They provide different types of security visibility.
+
+**Does `terraform validate` prove deployment success?**  
+No. It checks the configuration's syntax and consistency, not whether resources can be deployed successfully in AWS.
